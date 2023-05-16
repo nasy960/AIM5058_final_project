@@ -13,6 +13,7 @@ from scipy.stats import gamma, poisson
 from scipy.special import logsumexp
 from sklearn.cluster import KMeans
 
+# set parameter
 def make_config():
     config = {}
     ##### for option #####
@@ -20,8 +21,8 @@ def make_config():
     config["N_WORDS"] = 2000
     config["DEFAULT_DATA_PATH"] = "datasets/ap"
     config["FORCE_LOAD_FROM_RAW_DATA"] = False
-    config["ALPHA"] = 1#5e+1
-    config["BETA"] = 1#1e-2
+    config["ALPHA"] = 5e+1
+    config["BETA"] = 1e-2
     config["N_CLS"] = 5
     config["N_ITER"] = 100
     config["N_TOPK"] = 10
@@ -36,6 +37,7 @@ class ApData:
         # nltk.download('stopwords')
         # english_stopwords = stopwords.words('english')
 
+        # load custom stopwords (nltk + person name + etc..)
         english_stopwords = []
         with open("stopwords/stopwords.txt", "rt", encoding='UTF8') as f:
             lines = f.readlines()
@@ -101,9 +103,11 @@ class GibbsSampler:
         self.K = n_topK
 
     def init_label(self, alpha=1, beta=1, opt="uniform_random"):
+        # init alpha and beta using hyperparameter
         self.Alpha = np.ones(shape=(self.n_cls, self.n_word)) * alpha
         self.Beta = np.ones(shape=(self.n_cls, self.n_word)) * beta
 
+        # method for initialize label
         if opt=="uniform_random":
             self.Z = np.random.randint(self.n_cls, size=(self.n_doc, 1))
 
@@ -114,6 +118,7 @@ class GibbsSampler:
         else:
             raise Exception(str("There is no initialize option named \"") + opt + "\"!")
         
+        # pre-calculating increment of alpha and beta for alpha hat and beta hat
         self.alpha_hat = np.zeros_like(self.Alpha)
         self.beta_hat = np.zeros_like(self.Beta)
         for doc, label in zip(self.X, self.Z):
@@ -141,6 +146,7 @@ class GibbsSampler:
                 # posterior = np.exp(posterior_log)
                 # w = posterior / np.sum(posterior)
 
+                # using log scale calculation because of precision
                 aa = logsumexp(posterior_log)
                 posterior_log -= aa
                 w = np.exp(posterior_log)
